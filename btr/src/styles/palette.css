@@ -1,0 +1,247 @@
+/**
+ * 透明パレット栓抜き回転システム - CSS定義
+ * 
+ * 栓抜きの回転軸位置ずれとブレを根本解決する
+ * 精密なCSS実装とGPU最適化
+ */
+
+/* ================================
+   CSS Custom Properties 定義
+   ================================ */
+
+:root {
+  /* 透明パレットシステム基本値 (モバイル) */
+  --bottle-opener-width: 224px;
+  --palette-size: 248px;
+  --palette-radius: 124px;
+  --scale-ratio: 0.147695;
+  
+  /* 回転・アニメーション最適化 */
+  --transform-origin: center;
+  --will-change: transform;
+  --backface-visibility: hidden;
+  
+  /* GPU加速とパフォーマンス */
+  --gpu-layer: translateZ(0);
+  --animation-duration: 0.3s;
+  --animation-easing: ease-out;
+}
+
+/* デスクトップ用設定 (768px以上) */
+@media (min-width: 768px) {
+  :root {
+    --bottle-opener-width: 269px;
+    --palette-size: 298px;
+    --palette-radius: 149px;
+    --scale-ratio: 0.177325;
+  }
+}
+
+/* ================================
+   透明パレット構造
+   ================================ */
+
+/**
+ * 透明パレットコンテナ
+ * 概念的な回転軸制御エリア
+ */
+.transparent-palette {
+  position: relative;
+  width: var(--palette-size);
+  height: var(--palette-size);
+  
+  /* 回転軸設定 - 中央固定で簡素化 */
+  transform-origin: var(--transform-origin);
+  
+  /* GPU最適化 */
+  will-change: var(--will-change);
+  transform: var(--gpu-layer);
+  backface-visibility: var(--backface-visibility);
+  
+  /* スムーズな遷移 */
+  transition: width var(--animation-duration) var(--animation-easing),
+              height var(--animation-duration) var(--animation-easing);
+}
+
+/**
+ * 栓抜き画像配置
+ * rotationAxisが中央に来るよう精密配置
+ */
+.transparent-palette .bottle-opener-image {
+  position: absolute;
+  width: var(--bottle-opener-width);
+  height: auto;
+  
+  /* 中央配置 - rotationAxisがパレット中央に位置 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  
+  /* GPU最適化 */
+  backface-visibility: var(--backface-visibility);
+  transform: translate(-50%, -50%) var(--gpu-layer);
+  
+  /* 高品質画像レンダリング */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/**
+ * 栓抜きレイヤー配置
+ * ルーレット中央への配置制御
+ */
+.bottle-opener-layer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  
+  /* レイヤー管理 */
+  z-index: 20;
+  
+  /* アクセシビリティ */
+  pointer-events: none; /* 透明部分でのクリック防止 */
+}
+
+/* 栓抜き画像のポインターイベント復活 */
+.bottle-opener-layer .bottle-opener-image {
+  pointer-events: auto;
+}
+
+/* ================================
+   アニメーション最適化
+   ================================ */
+
+/**
+ * 回転アニメーション時の最適化
+ */
+.transparent-palette.spinning {
+  /* 回転中の追加最適化 */
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+/**
+ * アイドル状態での最適化
+ */
+.transparent-palette:not(.spinning) {
+  will-change: auto; /* 不要な最適化を解除 */
+}
+
+/* ================================
+   レスポンシブ対応
+   ================================ */
+
+/**
+ * モバイル専用調整 (767px以下)
+ */
+@media (max-width: 767px) {
+  .transparent-palette {
+    /* モバイルでの微調整 */
+    transform: var(--gpu-layer) scale(1);
+  }
+  
+  .bottle-opener-layer {
+    /* タッチ操作の最適化 */
+    touch-action: manipulation;
+  }
+}
+
+/**
+ * タブレット・デスクトップ (768px以上)
+ */
+@media (min-width: 768px) {
+  .transparent-palette {
+    /* デスクトップでの精密表示 */
+    transform: var(--gpu-layer) scale(1);
+  }
+}
+
+/**
+ * 高DPI ディスプレイ対応
+ */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .transparent-palette .bottle-opener-image {
+    /* Retina対応での高品質レンダリング */
+    image-rendering: auto;
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* ================================
+   デバッグ・開発用スタイル
+   ================================ */
+
+/**
+ * 開発時のパレット境界表示
+ * プロダクションでは非表示
+ */
+.transparent-palette.debug-mode {
+  border: 1px dashed rgba(255, 0, 0, 0.3);
+  background: rgba(255, 255, 0, 0.1);
+}
+
+.transparent-palette.debug-mode::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: red;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+/* デバッグモードでの数値表示 */
+.transparent-palette.debug-mode::after {
+  content: 
+    'Size: ' var(--palette-size) ' | '
+    'Radius: ' var(--palette-radius) ' | '
+    'Scale: ' var(--scale-ratio);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  z-index: 1001;
+  pointer-events: none;
+}
+
+/* ================================
+   ブラウザ互換性対応
+   ================================ */
+
+/**
+ * Safari固有の最適化
+ */
+@supports (-webkit-appearance: none) {
+  .transparent-palette {
+    -webkit-transform-style: preserve-3d;
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+/**
+ * Firefox固有の最適化
+ */
+@supports (-moz-appearance: none) {
+  .transparent-palette .bottle-opener-image {
+    image-rendering: crisp-edges;
+  }
+}
+
+/**
+ * Chrome/Edge固有の最適化
+ */
+@supports (contain: layout) {
+  .transparent-palette {
+    contain: layout style paint;
+  }
+}

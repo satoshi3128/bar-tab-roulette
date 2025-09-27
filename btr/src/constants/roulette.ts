@@ -1,9 +1,12 @@
 /**
- * Roulette Game Constants - Phase 1: Physics and Math Constants
+ * Roulette Game Constants - All Phases: Complete Constants Definition
  * 
  * This file contains all physics, mathematical, and positioning constants
  * used in the roulette wheel calculations to eliminate magic numbers.
+ * Includes the new Transparent Palette System for precise rotation control.
  */
+
+import { PrecisionUtils } from '../utils/precision';
 
 // Bottle Opener Physics Constants
 export const BOTTLE_OPENER_PHYSICS = {
@@ -239,4 +242,96 @@ export const LAYOUT = {
     OVERLAY: 40,                           // Calculation state overlay
     MODAL: 50,                             // Modal dialogs
   },
+} as const;
+
+// ================================
+// 透明パレットシステム定数 - Phase 1: 新回転制御システム
+// ================================
+
+/**
+ * 透明パレット栓抜き回転システム
+ * 
+ * 栓抜きの回転軸位置ずれとブレを根本解決し、
+ * ルーレット70%サイズの迫力ある表示を実現する精密システム
+ */
+export const TRANSPARENT_PALETTE_SYSTEM = {
+  // 元画像の正確な仕様
+  ORIGINAL: {
+    IMAGE_WIDTH: 1517,                  // 元画像幅 (px)
+    IMAGE_HEIGHT: 544,                  // 元画像高さ (px)
+    ROTATION_AXIS_FINGERTIP_DISTANCE: 838.6, // rotationAxis-fingertip間距離 (px)
+  },
+  
+  // 透明パレット回転システム用角度
+  POINTER_ANGLE_DEG: -177.8,            // fingertip初期角度 (度) - 透明パレット用
+  
+  // モバイル設定 (320px ルーレット)
+  MOBILE: {
+    ROULETTE_SIZE: 320,
+    BOTTLE_OPENER_WIDTH: 224,           // 320 × 0.7
+    SCALE_RATIO: PrecisionUtils.toHighPrecision(224 / 1517), // 0.147695
+    PALETTE_RADIUS: PrecisionUtils.toHalfPixel(838.6 * (224 / 1517)), // 124px
+    PALETTE_SIZE: PrecisionUtils.toIntegerPixel(838.6 * (224 / 1517) * 2), // 248px
+  },
+  
+  // デスクトップ設定 (384px ルーレット)
+  DESKTOP: {
+    ROULETTE_SIZE: 384,
+    BOTTLE_OPENER_WIDTH: PrecisionUtils.toHalfPixel(384 * 0.7), // 269px
+    SCALE_RATIO: PrecisionUtils.toHighPrecision(269 / 1517), // 0.177325
+    PALETTE_RADIUS: PrecisionUtils.toHalfPixel(838.6 * (269 / 1517)), // 149px
+    PALETTE_SIZE: PrecisionUtils.toIntegerPixel(838.6 * (269 / 1517) * 2), // 298px
+  },
+  
+  // 動的計算ヘルパー関数
+  calculatePaletteSize: (rouletteSize: number): number => {
+    const bottleOpenerWidth = rouletteSize * 0.7;
+    const scaleRatio = PrecisionUtils.calculatePreciseRatio(bottleOpenerWidth, 1517);
+    const paletteRadius = 838.6 * scaleRatio;
+    return PrecisionUtils.toIntegerPixel(paletteRadius * 2);
+  },
+  
+  calculateBottleOpenerWidth: (rouletteSize: number): number => {
+    return PrecisionUtils.toHalfPixel(rouletteSize * 0.7);
+  },
+  
+  calculateScaleRatio: (rouletteSize: number): number => {
+    const bottleOpenerWidth = rouletteSize * 0.7;
+    return PrecisionUtils.calculatePreciseRatio(bottleOpenerWidth, 1517);
+  },
+  
+  calculatePaletteRadius: (rouletteSize: number): number => {
+    const scaleRatio = TRANSPARENT_PALETTE_SYSTEM.calculateScaleRatio(rouletteSize);
+    return PrecisionUtils.toHalfPixel(838.6 * scaleRatio);
+  },
+} as const;
+
+// CSS Custom Properties用の定数マッピング
+export const CSS_VARIABLES = {
+  // 透明パレットシステム用CSS変数名
+  BOTTLE_OPENER_WIDTH: '--bottle-opener-width',
+  PALETTE_SIZE: '--palette-size',
+  PALETTE_RADIUS: '--palette-radius',
+  SCALE_RATIO: '--scale-ratio',
+  
+  // レスポンシブブレークポイント
+  MOBILE_BREAKPOINT: 768, // px (Tailwind md: 以上でデスクトップ)
+  
+  // CSS出力用フォーマッター
+  formatCSSValue: (value: number): string => PrecisionUtils.toCSSPixel(value),
+  formatCSSRatio: (value: number): string => PrecisionUtils.toHighPrecision(value).toString(),
+} as const;
+
+// レガシーシステムとの互換性保持
+export const LEGACY_COMPATIBILITY = {
+  // 既存システムへの移行支援
+  ENABLE_TRANSPARENT_PALETTE: true,     // 新システム有効化フラグ
+  FALLBACK_TO_LEGACY: false,           // レガシーシステムへのフォールバック
+  
+  // 段階的移行用定数
+  MIGRATION_PHASE: 'TRANSPARENT_PALETTE' as const, // 現在の移行段階
+  
+  // デバッグ・検証用
+  DEBUG_MODE: process.env.NODE_ENV === 'development',
+  ENABLE_PRECISION_LOGGING: false,     // 精度ログ有効化
 } as const;

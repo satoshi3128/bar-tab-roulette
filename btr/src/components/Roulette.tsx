@@ -16,7 +16,10 @@ import {
   VISUAL_THEME,
   DIMENSIONS,
   LAYOUT,
+  TRANSPARENT_PALETTE_SYSTEM,
+  LEGACY_COMPATIBILITY,
 } from '@/constants/roulette';
+import { usePaletteCSS } from '@/hooks/usePaletteCSS';
 
 interface RouletteProps {
   participants: Participant[];
@@ -37,6 +40,9 @@ export function Roulette({
   const [calculationState, setCalculationState] = useState<'idle' | 'drum-roll' | 'calculating' | 'result' | 'error'>('idle');
   const hintIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const bottleOpenerRef = useRef<HTMLImageElement>(null);
+  
+  // Transparent Palette CSS management
+  usePaletteCSS();
 
   // Generate conic-gradient background
   const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
@@ -172,17 +178,34 @@ export function Roulette({
     
     // Simple angle-based calculation without DOM measurements
     const currentRotationDegrees = getCurrentRotation();
-    const baseAngleDegrees = -177.8; // Initial finger tip angle
-    const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
     
-    // Simplified angle normalization using constants
-    const angleFromCenter = (totalAngleDegrees + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
-    
-    const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
-    const segmentIndex = Math.floor(angleFromCenter / segmentSize);
-    const validIndex = segmentIndex % participants.length;
-    
-    return participants[validIndex];
+    if (LEGACY_COMPATIBILITY.ENABLE_TRANSPARENT_PALETTE) {
+      // Transparent Palette System: simplified calculation with center rotation
+      const baseAngleDegrees = TRANSPARENT_PALETTE_SYSTEM.POINTER_ANGLE_DEG;
+      const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
+      
+      // Simplified angle normalization
+      const angleFromCenter = (totalAngleDegrees + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
+      
+      const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
+      const segmentIndex = Math.floor(angleFromCenter / segmentSize);
+      const validIndex = segmentIndex % participants.length;
+      
+      return participants[validIndex];
+    } else {
+      // Legacy System: original calculation
+      const baseAngleDegrees = -177.8; // Initial finger tip angle
+      const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
+      
+      // Simplified angle normalization using constants
+      const angleFromCenter = (totalAngleDegrees + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
+      
+      const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
+      const segmentIndex = Math.floor(angleFromCenter / segmentSize);
+      const validIndex = segmentIndex % participants.length;
+      
+      return participants[validIndex];
+    }
   }, [participants, getCurrentRotation]);
 
 
@@ -197,44 +220,66 @@ export function Roulette({
       throw new Error("No participants available");
     }
 
-    // Get DOM element position and size with multiple measurements for accuracy
-    const rect = bottleOpenerRef.current.getBoundingClientRect();
-    
-    // Calculate rotation axis position using constants
-    const rotationAxisX = rect.left + rect.width * BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.X_PERCENT;
-    const rotationAxisY = rect.top + rect.height * BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.Y_PERCENT;
+    if (LEGACY_COMPATIBILITY.ENABLE_TRANSPARENT_PALETTE) {
+      // Transparent Palette System: Simplified calculation with center-based rotation
+      // Get current rotation angle with high precision
+      const currentRotationDegrees = getCurrentRotation();
+      
+      // With transparent palette, finger tip calculation is simplified
+      const baseAngleDegrees = TRANSPARENT_PALETTE_SYSTEM.POINTER_ANGLE_DEG;
+      const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
+      
+      // Direct angle calculation without complex DOM positioning
+      const angleFromCenter = (totalAngleDegrees + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
 
-    // Get current rotation angle with high precision
-    const currentRotationDegrees = getCurrentRotation();
+      // Determine which segment the pointer is indicating
+      const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
+      const segmentIndex = Math.floor(angleFromCenter / segmentSize);
+      const validIndex = segmentIndex % participants.length;
 
-    // Calculate finger tip position using constants
-    // Original: fingertip(0,222) to rotationAxis(838,254) = distance 838.61px at angle -177.8°
-    // Scaled for 144px display: distance = 838.61 * (144/544) = 221.9px
-    const baseAngleDegrees = BOTTLE_OPENER_PHYSICS.BASE_ANGLE_DEGREES;
-    const scaledDistance = BOTTLE_OPENER_PHYSICS.SCALED_DISTANCE_PX;
-    
-    const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
-    const totalAngleRadians = totalAngleDegrees * (Math.PI / 180);
+      return participants[validIndex];
+      
+    } else {
+      // Legacy System: Complex DOM-based calculation
+      // Get DOM element position and size with multiple measurements for accuracy
+      const rect = bottleOpenerRef.current.getBoundingClientRect();
+      
+      // Calculate rotation axis position using constants
+      const rotationAxisX = rect.left + rect.width * BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.X_PERCENT;
+      const rotationAxisY = rect.top + rect.height * BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.Y_PERCENT;
 
-    // Calculate finger tip absolute position
-    const fingerX = rotationAxisX + Math.cos(totalAngleRadians) * scaledDistance;
-    const fingerY = rotationAxisY + Math.sin(totalAngleRadians) * scaledDistance;
+      // Get current rotation angle with high precision
+      const currentRotationDegrees = getCurrentRotation();
 
-    // Calculate angle from roulette center to finger tip
-    const rouletteCenterX = rect.left + rect.width / 2;
-    const rouletteCenterY = rect.top + rect.height / 2;
-    
-    const deltaX = fingerX - rouletteCenterX;
-    const deltaY = fingerY - rouletteCenterY;
-    
-    const angleFromCenter = (Math.atan2(deltaY, deltaX) * (180 / Math.PI) + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
+      // Calculate finger tip position using constants
+      // Original: fingertip(0,222) to rotationAxis(838,254) = distance 838.61px at angle -177.8°
+      // Scaled for 144px display: distance = 838.61 * (144/544) = 221.9px
+      const baseAngleDegrees = BOTTLE_OPENER_PHYSICS.BASE_ANGLE_DEGREES;
+      const scaledDistance = BOTTLE_OPENER_PHYSICS.SCALED_DISTANCE_PX;
+      
+      const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
+      const totalAngleRadians = totalAngleDegrees * (Math.PI / 180);
 
-    // Determine which segment the finger tip is pointing to
-    const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
-    const segmentIndex = Math.floor(angleFromCenter / segmentSize);
-    const validIndex = segmentIndex % participants.length;
+      // Calculate finger tip absolute position
+      const fingerX = rotationAxisX + Math.cos(totalAngleRadians) * scaledDistance;
+      const fingerY = rotationAxisY + Math.sin(totalAngleRadians) * scaledDistance;
 
-    return participants[validIndex];
+      // Calculate angle from roulette center to finger tip
+      const rouletteCenterX = rect.left + rect.width / 2;
+      const rouletteCenterY = rect.top + rect.height / 2;
+      
+      const deltaX = fingerX - rouletteCenterX;
+      const deltaY = fingerY - rouletteCenterY;
+      
+      const angleFromCenter = (Math.atan2(deltaY, deltaX) * (180 / Math.PI) + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
+
+      // Determine which segment the finger tip is pointing to
+      const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
+      const segmentIndex = Math.floor(angleFromCenter / segmentSize);
+      const validIndex = segmentIndex % participants.length;
+
+      return participants[validIndex];
+    }
   }, [participants, getCurrentRotation]);
 
   // Real-time payer tracking during spinning
@@ -404,25 +449,51 @@ export function Roulette({
       
 
 
-      {/* Bottle Opener Overlay - Layer 3 (transparent overlay) */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ pointerEvents: 'none', zIndex: LAYOUT.Z_INDEX.POINTER }}
-      >
-        <img 
-          ref={bottleOpenerRef}
-          src="/bottle_opener.png"
-          alt="Bottle Opener Pointer"
-          className="object-contain"
-          style={{
-            width: COMPONENT_SIZES.BOTTLE_OPENER_PX,
-            height: COMPONENT_SIZES.BOTTLE_OPENER_PX,
-            filter: `drop-shadow(0 6px 12px ${VISUAL_THEME.DROP_SHADOW})`,
-            transform: `translate(${BOTTLE_OPENER_POSITIONING.OFFSET_X_PX}px, ${BOTTLE_OPENER_POSITIONING.OFFSET_Y_PX}px) rotate(${BOTTLE_OPENER_POSITIONING.INITIAL_ROTATION_DEG}deg)`,
-            transformOrigin: `${BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.X_PERCENT * 100}% ${BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.Y_PERCENT * 100}%`, // Precise rotation axis (dimple center)
-          }}
-        />
-      </div>
+      {/* Transparent Palette Bottle Opener - Layer 3 (precise rotation) */}
+      {LEGACY_COMPATIBILITY.ENABLE_TRANSPARENT_PALETTE ? (
+        <div 
+          className="bottle-opener-layer"
+          style={{ zIndex: LAYOUT.Z_INDEX.POINTER }}
+        >
+          <div 
+            ref={bottleOpenerRef}
+            className="transparent-palette"
+            style={{
+              transform: `rotate(${BOTTLE_OPENER_POSITIONING.INITIAL_ROTATION_DEG}deg)`,
+            }}
+          >
+            <img 
+              src="/bottle_opener.png"
+              alt="Bottle Opener Pointer"
+              className="bottle-opener-image"
+              style={{
+                filter: `drop-shadow(0 6px 12px ${VISUAL_THEME.DROP_SHADOW})`,
+                pointerEvents: 'none',
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        /* Legacy Bottle Opener - fallback */
+        <div 
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ pointerEvents: 'none', zIndex: LAYOUT.Z_INDEX.POINTER }}
+        >
+          <img 
+            ref={bottleOpenerRef}
+            src="/bottle_opener.png"
+            alt="Bottle Opener Pointer"
+            className="object-contain"
+            style={{
+              width: COMPONENT_SIZES.BOTTLE_OPENER_PX,
+              height: COMPONENT_SIZES.BOTTLE_OPENER_PX,
+              filter: `drop-shadow(0 6px 12px ${VISUAL_THEME.DROP_SHADOW})`,
+              transform: `translate(${BOTTLE_OPENER_POSITIONING.OFFSET_X_PX}px, ${BOTTLE_OPENER_POSITIONING.OFFSET_Y_PX}px) rotate(${BOTTLE_OPENER_POSITIONING.INITIAL_ROTATION_DEG}deg)`,
+              transformOrigin: `${BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.X_PERCENT * 100}% ${BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.Y_PERCENT * 100}%`,
+            }}
+          />
+        </div>
+      )}
 
       {/* Transparent Button Layer - Layer 4 (interaction) */}
       <div 
