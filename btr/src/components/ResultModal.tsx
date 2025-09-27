@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Participant } from '@/types';
+import { UI_MESSAGES, LAYOUT } from '@/constants/roulette';
 
 interface ResultModalProps {
   winner: Participant | null;
@@ -17,7 +18,8 @@ export function ResultModal({ winner, onClose }: ResultModalProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-black/70 flex items-center justify-center p-4"
+        style={{ zIndex: LAYOUT.Z_INDEX.MODAL }}
         onClick={onClose}
       >
         <motion.div
@@ -103,7 +105,7 @@ export function ResultModal({ winner, onClose }: ResultModalProps) {
                 {winner.name}
               </div>
               <div className="text-lg text-amber-200 mt-2">
-                支払い担当に決定！
+                {UI_MESSAGES.MODAL_MESSAGE}
               </div>
             </div>
           </motion.div>

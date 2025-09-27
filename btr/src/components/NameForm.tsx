@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Participant, PARTICIPANT_EMOJIS, PARTICIPANT_COLORS, MIN_PARTICIPANTS, MAX_PARTICIPANTS } from '@/types';
+import { UI_MESSAGES, INPUT_CONSTRAINTS, VISUAL_THEME, LAYOUT } from '@/constants/roulette';
 
 interface NameFormProps {
   participants: Participant[];
@@ -21,12 +22,12 @@ export function NameForm({ participants, onAddParticipant, onRemoveParticipant, 
     
     // Validation
     if (!name.trim()) {
-      setError('名前を入力してください');
+      setError(UI_MESSAGES.NAME_REQUIRED_ERROR);
       return;
     }
 
     if (participants.length >= MAX_PARTICIPANTS) {
-      setError(`参加者は最大${MAX_PARTICIPANTS}人までです`);
+      setError(UI_MESSAGES.MAX_PARTICIPANTS_ERROR.replace('{MAX}', MAX_PARTICIPANTS.toString()));
       return;
     }
 
@@ -84,14 +85,14 @@ export function NameForm({ participants, onAddParticipant, onRemoveParticipant, 
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="参加者の名前を入力"
+              placeholder={UI_MESSAGES.NAME_INPUT_PLACEHOLDER}
               className="flex-grow px-4 py-3 bg-amber-50 border-2 border-amber-800 rounded-lg focus:outline-none focus:border-amber-600 text-amber-900 placeholder-amber-700"
-              maxLength={20}
+              maxLength={INPUT_CONSTRAINTS.MAX_NAME_LENGTH}
             />
             <button
               type="submit"
               className="flex-shrink-0 w-12 h-12 bg-amber-800 text-amber-100 rounded-lg hover:bg-amber-700 transition-colors font-medium flex items-center justify-center text-xl"
-              title={`参加者を追加 (${participants.length}/${MAX_PARTICIPANTS})`}
+              title={UI_MESSAGES.ADD_PARTICIPANT_TOOLTIP.replace('{CURRENT}', participants.length.toString()).replace('{MAX}', MAX_PARTICIPANTS.toString())}
             >
               ➕
             </button>
@@ -106,23 +107,23 @@ export function NameForm({ participants, onAddParticipant, onRemoveParticipant, 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-amber-100">
-            参加者 ({participants.length}/{MAX_PARTICIPANTS})
+            {UI_MESSAGES.PARTICIPANTS_LABEL} ({participants.length}/{MAX_PARTICIPANTS})
           </h3>
           {participants.length > 0 && (
             <button
               onClick={handleResetClick}
               className="flex items-center space-x-1 px-2 py-1 text-amber-300 hover:text-amber-100 hover:bg-amber-800/30 rounded transition-colors"
-              title="参加者をリセット"
+              title={UI_MESSAGES.RESET_PARTICIPANTS_TOOLTIP}
             >
               <span className="text-sm">🔄</span>
-              <span className="text-xs">リセット</span>
+              <span className="text-xs">{UI_MESSAGES.RESET_BUTTON}</span>
             </button>
           )}
         </div>
         
         {participants.length === 0 ? (
           <p className="text-amber-300 text-center py-8 bg-amber-900/20 rounded-lg">
-            参加者を追加してください
+            {UI_MESSAGES.ADD_PARTICIPANTS_PROMPT}
           </p>
         ) : (
           <div className="space-y-1">
@@ -138,7 +139,7 @@ export function NameForm({ participants, onAddParticipant, onRemoveParticipant, 
                       ? `${participant.color}80` // 50% opacity for selected payer
                       : `${participant.color}40`, // 25% opacity for normal
                     borderColor: isSelectedToPay 
-                      ? '#FFFFFF' // white
+                      ? VISUAL_THEME.WHITE_BORDER // white
                       : `${participant.color}40`, // same transparency as background when not selected
                     boxShadow: isSelectedToPay 
                       ? '0 25px 50px -12px rgba(255, 255, 255, 0.3)' // white shadow
@@ -166,7 +167,7 @@ export function NameForm({ participants, onAddParticipant, onRemoveParticipant, 
                     <button
                       onClick={() => onRemoveParticipant(participant.id)}
                       className="p-1 bg-transparent hover:bg-red-600/20 rounded transition-colors text-lg"
-                      title="参加者を退出させる"
+                      title={UI_MESSAGES.REMOVE_PARTICIPANT_TOOLTIP}
                     >
                       👋
                     </button>
@@ -182,7 +183,7 @@ export function NameForm({ participants, onAddParticipant, onRemoveParticipant, 
       {!canStartGame && participants.length > 0 && (
         <div className="p-3 bg-yellow-900/30 border border-yellow-600 rounded-lg">
           <p className="text-yellow-200 text-sm text-center">
-            ゲームを開始するには、あと{MIN_PARTICIPANTS - participants.length}人の参加者が必要です
+            {UI_MESSAGES.NEED_MORE_PARTICIPANTS.replace('{COUNT}', (MIN_PARTICIPANTS - participants.length).toString())}
           </p>
         </div>
       )}
@@ -190,25 +191,30 @@ export function NameForm({ participants, onAddParticipant, onRemoveParticipant, 
 
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div 
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ 
+            backgroundColor: VISUAL_THEME.MODAL_OVERLAY,
+            zIndex: LAYOUT.Z_INDEX.MODAL 
+          }}
+        >
           <div className="bg-amber-900 border-2 border-amber-600 p-6 rounded-lg max-w-sm mx-4">
-            <h3 className="text-amber-100 font-semibold text-lg mb-3">参加者をリセット</h3>
+            <h3 className="text-amber-100 font-semibold text-lg mb-3">{UI_MESSAGES.RESET_CONFIRMATION_TITLE}</h3>
             <p className="text-amber-200 text-sm mb-6">
-              本当に参加者リストをすべてクリアしますか？<br />
-              この操作は取り消せません。
+              {UI_MESSAGES.RESET_CONFIRMATION_MESSAGE}
             </p>
             <div className="flex space-x-3">
               <button
                 onClick={handleResetCancel}
                 className="flex-1 py-2 px-4 bg-amber-700 text-amber-100 rounded hover:bg-amber-600 transition-colors"
               >
-                キャンセル
+                {UI_MESSAGES.CANCEL_BUTTON}
               </button>
               <button
                 onClick={handleResetConfirm}
                 className="flex-1 py-2 px-4 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
               >
-                リセット
+                {UI_MESSAGES.CONFIRM_RESET_BUTTON}
               </button>
             </div>
           </div>
