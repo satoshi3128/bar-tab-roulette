@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Participant } from '@/types';
+import { UI_MESSAGES } from '@/constants/roulette';
 import { NameForm } from '@/components/NameForm';
 import { Roulette } from '@/components/Roulette';
 import { ResultModal } from '@/components/ResultModal';
@@ -55,10 +56,10 @@ export default function Home() {
         {/* Header */}
         <header className="text-center space-y-3 warm-glow">
           <h1 className="text-4xl md:text-5xl font-bold text-amber-100 drop-shadow-lg">
-            BarTab Roulette
+            {UI_MESSAGES.PAGE_TITLE}
           </h1>
           <p className="text-base md:text-lg text-amber-200 max-w-xl mx-auto">
-            🍻 次の一杯は誰がおごる？ 🍻
+            {UI_MESSAGES.PAGE_SUBTITLE}
           </p>
           
         </header>
@@ -98,7 +99,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="text-center text-amber-400 text-sm mt-6">
-          <p>飲み過ぎにはご注意ください 🍻</p>
+          <p>{UI_MESSAGES.PAGE_FOOTER}</p>
         </footer>
       </main>
 

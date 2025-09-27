@@ -1,8 +1,25 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, useAnimate } from 'framer-motion';
+import { useAnimate } from 'framer-motion';
 import { Participant } from '@/types';
+import {
+  BOTTLE_OPENER_PHYSICS,
+  BOTTLE_OPENER_POSITIONING,
+  ANIMATION_CONFIG,
+  PARTICIPANT_LAYOUT,
+  COMPONENT_SIZES,
+  POWER_CALCULATION,
+  ANGLE_CALCULATION,
+  UI_MESSAGES,
+  HINT_TIMING,
+  VISUAL_THEME,
+  DIMENSIONS,
+  LAYOUT,
+  TRANSPARENT_PALETTE_SYSTEM,
+  LEGACY_COMPATIBILITY,
+} from '@/constants/roulette';
+import { usePaletteCSS } from '@/hooks/usePaletteCSS';
 
 interface RouletteProps {
   participants: Participant[];
@@ -17,15 +34,18 @@ export function Roulette({
   onCurrentPayerChange, 
   onHintTextChange
 }: RouletteProps) {
-  const [scope, animate] = useAnimate();
+  const [, animate] = useAnimate();
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedPayer, setSelectedPayer] = useState<Participant | null>(null);
   const [calculationState, setCalculationState] = useState<'idle' | 'drum-roll' | 'calculating' | 'result' | 'error'>('idle');
   const hintIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const bottleOpenerRef = useRef<HTMLImageElement>(null);
+  
+  // Transparent Palette CSS management
+  usePaletteCSS();
 
   // Generate conic-gradient background
-  const segmentSize = 360 / participants.length;
+  const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
   
   const gradientParts = participants.map((participant, index) => {
     const startAngle = index * segmentSize;
@@ -33,7 +53,7 @@ export function Roulette({
     
     // Use gold color for selected payer, original color for others
     const color = (selectedPayer?.id === participant.id) 
-      ? '#F7DC6F' // Light gold for selected payer
+      ? VISUAL_THEME.SELECTED_PAYER_COLOR // Light gold for selected payer
       : participant.color;
       
     return `${color} ${startAngle}deg ${endAngle}deg`;
@@ -44,11 +64,11 @@ export function Roulette({
   // Calculate participant positions on the wheel (equal segments)
   const getParticipantPosition = (index: number) => {
     // Each participant gets an equal segment
-    const segmentAngle = 360 / participants.length;
+    const segmentAngle = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
     const centerAngle = index * segmentAngle + segmentAngle / 2;
     
     const angle = centerAngle * (Math.PI / 180);
-    const radius = 120; // Distance from center
+    const radius = PARTICIPANT_LAYOUT.RADIUS_PX; // Distance from center
     
     const x = Math.cos(angle - Math.PI / 2) * radius;
     const y = Math.sin(angle - Math.PI / 2) * radius;
@@ -61,11 +81,11 @@ export function Roulette({
     if (isSpinning || participants.length < 2) return;
     setIsSpinning(true);
 
-    // Generate random duration between 3-30 seconds
-    const randomDuration = Math.random() * 27 + 3; // 3-30 seconds
+    // Generate random duration using constants
+    const randomDuration = Math.random() * ANIMATION_CONFIG.SPIN_DURATION.RANGE_SECONDS + ANIMATION_CONFIG.SPIN_DURATION.MIN_SECONDS;
     
-    // Calculate power based on duration (adjust to match existing rotation logic)
-    const power = (randomDuration / 4) * 2000 + Math.random() * 1000;
+    // Calculate power based on duration using constants
+    const power = (randomDuration / POWER_CALCULATION.DURATION_DIVISOR) * POWER_CALCULATION.BASE_MULTIPLIER + Math.random() * POWER_CALCULATION.RANDOM_VARIANCE;
     
     // Get current rotation
     const currentRotation = getCurrentRotation();
@@ -115,16 +135,16 @@ export function Roulette({
       // Reset calculation state after a delay
       setTimeout(() => {
         setCalculationState('idle');
-      }, 2000);
+      }, ANIMATION_CONFIG.DRAMATIC_TIMING.RESULT_DISPLAY_MS);
       
     } catch (error) {
       console.error('Failed to determine payer:', error);
       setCalculationState('error');
       
-      // Auto-dismiss error after 1 second
+      // Auto-dismiss error after specified time
       setTimeout(() => {
         setCalculationState('idle');
-      }, 1000);
+      }, ANIMATION_CONFIG.DRAMATIC_TIMING.ERROR_DISMISS_MS);
     }
   };
 
@@ -146,7 +166,7 @@ export function Roulette({
       const rawRotation = Math.atan2(b, a) * (180 / Math.PI);
       
       // Normalize to 0-360 range to prevent accumulation errors
-      return ((rawRotation % 360) + 360) % 360;
+      return ((rawRotation % ANGLE_CALCULATION.FULL_CIRCLE_DEG) + ANGLE_CALCULATION.FULL_CIRCLE_DEG) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
     }
     
     return 0;
@@ -158,17 +178,34 @@ export function Roulette({
     
     // Simple angle-based calculation without DOM measurements
     const currentRotationDegrees = getCurrentRotation();
-    const baseAngleDegrees = -177.8; // Initial finger tip angle
-    const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
     
-    // Simplified angle normalization
-    const angleFromCenter = (totalAngleDegrees + 360 + 90) % 360;
-    
-    const segmentSize = 360 / participants.length;
-    const segmentIndex = Math.floor(angleFromCenter / segmentSize);
-    const validIndex = segmentIndex % participants.length;
-    
-    return participants[validIndex];
+    if (LEGACY_COMPATIBILITY.ENABLE_TRANSPARENT_PALETTE) {
+      // Transparent Palette System: simplified calculation with center rotation
+      const baseAngleDegrees = TRANSPARENT_PALETTE_SYSTEM.POINTER_ANGLE_DEG;
+      const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
+      
+      // Simplified angle normalization
+      const angleFromCenter = (totalAngleDegrees + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
+      
+      const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
+      const segmentIndex = Math.floor(angleFromCenter / segmentSize);
+      const validIndex = segmentIndex % participants.length;
+      
+      return participants[validIndex];
+    } else {
+      // Legacy System: original calculation
+      const baseAngleDegrees = -177.8; // Initial finger tip angle
+      const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
+      
+      // Simplified angle normalization using constants
+      const angleFromCenter = (totalAngleDegrees + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
+      
+      const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
+      const segmentIndex = Math.floor(angleFromCenter / segmentSize);
+      const validIndex = segmentIndex % participants.length;
+      
+      return participants[validIndex];
+    }
   }, [participants, getCurrentRotation]);
 
 
@@ -183,44 +220,66 @@ export function Roulette({
       throw new Error("No participants available");
     }
 
-    // Get DOM element position and size with multiple measurements for accuracy
-    const rect = bottleOpenerRef.current.getBoundingClientRect();
-    
-    // Calculate rotation axis position (dimple center at 55.24%, 46.69%)
-    const rotationAxisX = rect.left + rect.width * 0.5524;
-    const rotationAxisY = rect.top + rect.height * 0.4669;
+    if (LEGACY_COMPATIBILITY.ENABLE_TRANSPARENT_PALETTE) {
+      // Transparent Palette System: Simplified calculation with center-based rotation
+      // Get current rotation angle with high precision
+      const currentRotationDegrees = getCurrentRotation();
+      
+      // With transparent palette, finger tip calculation is simplified
+      const baseAngleDegrees = TRANSPARENT_PALETTE_SYSTEM.POINTER_ANGLE_DEG;
+      const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
+      
+      // Direct angle calculation without complex DOM positioning
+      const angleFromCenter = (totalAngleDegrees + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
 
-    // Get current rotation angle with high precision
-    const currentRotationDegrees = getCurrentRotation();
+      // Determine which segment the pointer is indicating
+      const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
+      const segmentIndex = Math.floor(angleFromCenter / segmentSize);
+      const validIndex = segmentIndex % participants.length;
 
-    // Calculate finger tip position using actual measurements
-    // Original: fingertip(0,222) to rotationAxis(838,254) = distance 838.61px at angle -177.8°
-    // Scaled for 144px display: distance = 838.61 * (144/544) = 221.9px
-    const baseAngleDegrees = -177.8; // Initial finger tip angle from image measurement
-    const scaledDistance = 221.9; // Scaled distance for 144px display
-    
-    const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
-    const totalAngleRadians = totalAngleDegrees * (Math.PI / 180);
+      return participants[validIndex];
+      
+    } else {
+      // Legacy System: Complex DOM-based calculation
+      // Get DOM element position and size with multiple measurements for accuracy
+      const rect = bottleOpenerRef.current.getBoundingClientRect();
+      
+      // Calculate rotation axis position using constants
+      const rotationAxisX = rect.left + rect.width * BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.X_PERCENT;
+      const rotationAxisY = rect.top + rect.height * BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.Y_PERCENT;
 
-    // Calculate finger tip absolute position
-    const fingerX = rotationAxisX + Math.cos(totalAngleRadians) * scaledDistance;
-    const fingerY = rotationAxisY + Math.sin(totalAngleRadians) * scaledDistance;
+      // Get current rotation angle with high precision
+      const currentRotationDegrees = getCurrentRotation();
 
-    // Calculate angle from roulette center to finger tip
-    const rouletteCenterX = rect.left + rect.width / 2;
-    const rouletteCenterY = rect.top + rect.height / 2;
-    
-    const deltaX = fingerX - rouletteCenterX;
-    const deltaY = fingerY - rouletteCenterY;
-    
-    const angleFromCenter = (Math.atan2(deltaY, deltaX) * (180 / Math.PI) + 360 + 90) % 360; // normalize and adjust for 12 o'clock
+      // Calculate finger tip position using constants
+      // Original: fingertip(0,222) to rotationAxis(838,254) = distance 838.61px at angle -177.8°
+      // Scaled for 144px display: distance = 838.61 * (144/544) = 221.9px
+      const baseAngleDegrees = BOTTLE_OPENER_PHYSICS.BASE_ANGLE_DEGREES;
+      const scaledDistance = BOTTLE_OPENER_PHYSICS.SCALED_DISTANCE_PX;
+      
+      const totalAngleDegrees = baseAngleDegrees + currentRotationDegrees;
+      const totalAngleRadians = totalAngleDegrees * (Math.PI / 180);
 
-    // Determine which segment the finger tip is pointing to
-    const segmentSize = 360 / participants.length;
-    const segmentIndex = Math.floor(angleFromCenter / segmentSize);
-    const validIndex = segmentIndex % participants.length;
+      // Calculate finger tip absolute position
+      const fingerX = rotationAxisX + Math.cos(totalAngleRadians) * scaledDistance;
+      const fingerY = rotationAxisY + Math.sin(totalAngleRadians) * scaledDistance;
 
-    return participants[validIndex];
+      // Calculate angle from roulette center to finger tip
+      const rouletteCenterX = rect.left + rect.width / 2;
+      const rouletteCenterY = rect.top + rect.height / 2;
+      
+      const deltaX = fingerX - rouletteCenterX;
+      const deltaY = fingerY - rouletteCenterY;
+      
+      const angleFromCenter = (Math.atan2(deltaY, deltaX) * (180 / Math.PI) + ANGLE_CALCULATION.NORMALIZATION_OFFSET + ANGLE_CALCULATION.REFERENCE_ADJUSTMENT) % ANGLE_CALCULATION.FULL_CIRCLE_DEG;
+
+      // Determine which segment the finger tip is pointing to
+      const segmentSize = ANGLE_CALCULATION.FULL_CIRCLE_DEG / participants.length;
+      const segmentIndex = Math.floor(angleFromCenter / segmentSize);
+      const validIndex = segmentIndex % participants.length;
+
+      return participants[validIndex];
+    }
   }, [participants, getCurrentRotation]);
 
   // Real-time payer tracking during spinning
@@ -243,13 +302,9 @@ export function Roulette({
 
   // Dramatic presentation with drum roll effect
   const dramaticPresentation = useCallback(async (duration: number): Promise<void> => {
-    // Phase 1: Drum roll
-    setCalculationState('drum-roll');
-    await new Promise(resolve => setTimeout(resolve, duration * 0.8)); // 800ms
-
-    // Phase 2: Calculating
+    // Start calculating immediately
     setCalculationState('calculating');
-    await new Promise(resolve => setTimeout(resolve, duration * 0.2)); // 200ms
+    await new Promise(resolve => setTimeout(resolve, duration));
 
     // Ready to reveal (will be set to 'result' after Promise.all completes)
   }, []);
@@ -260,7 +315,7 @@ export function Roulette({
       // Start both calculation and presentation in parallel
       const [payerResult] = await Promise.all([
         calculatePixelPerfectPayer(), // High-precision calculation
-        dramaticPresentation(1000)    // 1 second presentation
+        dramaticPresentation(ANIMATION_CONFIG.DRAMATIC_TIMING.TOTAL_DURATION_MS)    // Presentation duration
       ]);
 
       // Both completed - show result
@@ -271,10 +326,10 @@ export function Roulette({
       console.error('Calculation failed:', error);
       setCalculationState('error');
       
-      // Auto-dismiss error after 1 second
+      // Auto-dismiss error after specified time
       setTimeout(() => {
         setCalculationState('idle');
-      }, 1000);
+      }, ANIMATION_CONFIG.DRAMATIC_TIMING.ERROR_DISMISS_MS);
       
       throw error;
     }
@@ -289,7 +344,7 @@ export function Roulette({
       // Real-time updates during spinning
       const interval = setInterval(() => {
         updateCurrentPayer();
-      }, 16); // ~60fps for smooth real-time updates
+      }, ANIMATION_CONFIG.UPDATE_INTERVAL_MS); // 60fps for smooth real-time updates
       
       return () => clearInterval(interval);
     }
@@ -313,19 +368,19 @@ export function Roulette({
     }
 
     const hintCycle = () => {
-      onHintTextChange?.("Tap the center to spin the roulette!");
+      onHintTextChange?.(UI_MESSAGES.HINT_TEXT);
       
-      // Hide after 10 seconds
+      // Hide after specified duration
       hintIntervalRef.current = setTimeout(() => {
         onHintTextChange?.(null);
-      }, 10000);
+      }, HINT_TIMING.DISPLAY_DURATION_MS);
     };
 
     // Start cycle immediately
     hintCycle();
     
-    // Repeat every 30 seconds
-    const interval = setInterval(hintCycle, 30000);
+    // Repeat every cycle duration
+    const interval = setInterval(hintCycle, HINT_TIMING.CYCLE_DURATION_MS);
 
     return () => {
       clearInterval(interval);
@@ -338,17 +393,28 @@ export function Roulette({
 
   if (participants.length < 2) {
     return (
-      <div className="flex items-center justify-center w-80 h-80 md:w-96 md:h-96 border-4 border-amber-800 rounded-full bg-amber-900/20">
+      <div 
+        className="flex items-center justify-center border-4 border-amber-800 rounded-full bg-amber-900/20"
+        style={{
+          width: DIMENSIONS.ROULETTE_SMALL.WIDTH,
+          height: DIMENSIONS.ROULETTE_SMALL.HEIGHT,
+        }}
+      >
         <p className="text-amber-300 text-center px-6">
-          ルーレットを回すには<br />
-          参加者を2人以上追加してください
+          {UI_MESSAGES.INSUFFICIENT_PARTICIPANTS}
         </p>
       </div>
     );
   }
 
   return (
-    <div className="relative w-80 h-80 md:w-96 md:h-96 overflow-visible">
+    <div 
+      className="relative overflow-visible"
+      style={{
+        width: DIMENSIONS.ROULETTE_SMALL.WIDTH,
+        height: DIMENSIONS.ROULETTE_SMALL.HEIGHT,
+      }}
+    >
       {/* Roulette Wheel */}
       <div
         className="w-full h-full rounded-full border-4 border-amber-800 shadow-2xl transition-all relative overflow-hidden"
@@ -370,7 +436,7 @@ export function Roulette({
                 transform: 'translate(-50%, -50%)',
                 textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
                 filter: isSelectedToPay 
-                  ? 'drop-shadow(2px 2px 8px rgba(247, 220, 111, 0.8))' // Gold glow for selected payer
+                  ? `drop-shadow(2px 2px 8px ${VISUAL_THEME.SELECTED_PAYER_SHADOW})` // Gold glow for selected payer
                   : 'drop-shadow(1px 1px 2px rgba(0,0,0,0.9))',
               }}
             >
@@ -381,49 +447,70 @@ export function Roulette({
         })}
       </div>
       
-      {/* Center Hub - Layer 2 (decorative) */}
-      <motion.div
-        ref={scope}
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ pointerEvents: 'none', zIndex: 10 }}
-      >
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-amber-700 border-4 border-amber-800 shadow-lg flex items-center justify-center">
-          <div className="w-6 h-6 rounded-full bg-amber-900"></div>
-        </div>
-      </motion.div>
 
-      {/* Bottle Opener Overlay - Layer 3 (transparent overlay) */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ pointerEvents: 'none', zIndex: 20 }}
-      >
-        <img 
-          ref={bottleOpenerRef}
-          src="/bottle_opener.png"
-          alt="Bottle Opener Pointer"
-          className="w-36 h-36 object-contain"
-          style={{
-            filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.4))',
-            transform: 'translate(-7.5px, 4.8px) rotate(-90deg)',
-            transformOrigin: '55.24% 46.69%', // Precise rotation axis (dimple center)
-          }}
-        />
-      </div>
+
+      {/* Transparent Palette Bottle Opener - Layer 3 (precise rotation) */}
+      {LEGACY_COMPATIBILITY.ENABLE_TRANSPARENT_PALETTE ? (
+        <div 
+          className="bottle-opener-layer"
+          style={{ zIndex: LAYOUT.Z_INDEX.POINTER }}
+        >
+          <div 
+            ref={bottleOpenerRef}
+            className="transparent-palette"
+            style={{
+              transform: `rotate(${BOTTLE_OPENER_POSITIONING.INITIAL_ROTATION_DEG}deg)`,
+            }}
+          >
+            <img 
+              src="/bottle_opener.png"
+              alt="Bottle Opener Pointer"
+              className="bottle-opener-image"
+              style={{
+                filter: `drop-shadow(0 6px 12px ${VISUAL_THEME.DROP_SHADOW})`,
+                pointerEvents: 'none',
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        /* Legacy Bottle Opener - fallback */
+        <div 
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ pointerEvents: 'none', zIndex: LAYOUT.Z_INDEX.POINTER }}
+        >
+          <img 
+            ref={bottleOpenerRef}
+            src="/bottle_opener.png"
+            alt="Bottle Opener Pointer"
+            className="object-contain"
+            style={{
+              width: COMPONENT_SIZES.BOTTLE_OPENER_PX,
+              height: COMPONENT_SIZES.BOTTLE_OPENER_PX,
+              filter: `drop-shadow(0 6px 12px ${VISUAL_THEME.DROP_SHADOW})`,
+              transform: `translate(${BOTTLE_OPENER_POSITIONING.OFFSET_X_PX}px, ${BOTTLE_OPENER_POSITIONING.OFFSET_Y_PX}px) rotate(${BOTTLE_OPENER_POSITIONING.INITIAL_ROTATION_DEG}deg)`,
+              transformOrigin: `${BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.X_PERCENT * 100}% ${BOTTLE_OPENER_PHYSICS.ROTATION_AXIS.Y_PERCENT * 100}%`,
+            }}
+          />
+        </div>
+      )}
 
       {/* Transparent Button Layer - Layer 4 (interaction) */}
       <div 
         className="absolute inset-0 flex items-center justify-center"
-        style={{ zIndex: 30 }}
+        style={{ zIndex: LAYOUT.Z_INDEX.INTERACTION }}
       >
         <button
           onClick={handleSpinButton}
           disabled={isSpinning || participants.length < 2}
-          className="w-36 h-36 rounded-full bg-transparent hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer disabled:cursor-not-allowed touch-manipulation"
+          className="rounded-full bg-transparent hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer disabled:cursor-not-allowed touch-manipulation"
           style={{
+            width: COMPONENT_SIZES.INTERACTION_AREA_PX,
+            height: COMPONENT_SIZES.INTERACTION_AREA_PX,
             WebkitTapHighlightColor: 'transparent',
             touchAction: 'manipulation'
           }}
-          aria-label="ルーレットを回す"
+          aria-label={UI_MESSAGES.SPIN_ROULETTE_ARIA}
         />
       </div>
 
@@ -431,26 +518,15 @@ export function Roulette({
 
       {/* Calculation State Overlay */}
       {calculationState !== 'idle' && (
-        <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-40 rounded-full">
-          {calculationState === 'drum-roll' && (
-            <>
-              <div className="text-6xl mb-4 animate-pulse">🥁</div>
-              <div className="text-amber-200 text-xl animate-bounce">
-                ドラムロール...
-              </div>
-              <div className="mt-4 flex space-x-1">
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-ping" />
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-ping delay-100" />
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-ping delay-200" />
-              </div>
-            </>
-          )}
-          
+        <div 
+          className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center rounded-full"
+          style={{ zIndex: LAYOUT.Z_INDEX.OVERLAY }}
+        >
           {calculationState === 'calculating' && (
             <>
               <div className="text-4xl mb-4 animate-spin">⚙️</div>
               <div className="text-amber-200 text-lg">
-                精密判定中...
+                {UI_MESSAGES.CALCULATING}
               </div>
             </>
           )}
@@ -459,7 +535,7 @@ export function Roulette({
             <>
               <div className="text-6xl mb-4 animate-bounce">💸</div>
               <div className="text-amber-200 text-xl">
-                支払い担当決定！
+                {UI_MESSAGES.PAYER_DECIDED}
               </div>
             </>
           )}
@@ -468,10 +544,10 @@ export function Roulette({
             <>
               <div className="text-4xl mb-4">❌</div>
               <div className="text-red-400 text-lg">
-                計算エラー
+                {UI_MESSAGES.CALCULATION_ERROR}
               </div>
               <div className="text-amber-300 text-sm mt-2">
-                自動的に消えます...
+                {UI_MESSAGES.AUTO_DISMISS}
               </div>
             </>
           )}
@@ -480,7 +556,7 @@ export function Roulette({
 
       {isSpinning && (
         <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 text-amber-200 text-center">
-          <p className="text-sm animate-pulse">回転中...</p>
+          <p className="text-sm animate-pulse">{UI_MESSAGES.SPINNING}</p>
         </div>
       )}
     </div>
