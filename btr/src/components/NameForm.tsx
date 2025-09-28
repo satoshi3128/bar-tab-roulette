@@ -10,9 +10,10 @@ interface NameFormProps {
   onRemoveParticipant: (id: string) => void;
   onResetAllParticipants: () => void;
   selectedPayer?: Participant | null;
+  currentPendingPayer?: Participant | null;
 }
 
-export function NameForm({ participants, onAddParticipant, onRemoveParticipant, onResetAllParticipants, selectedPayer }: NameFormProps) {
+export function NameForm({ participants, onAddParticipant, onRemoveParticipant, onResetAllParticipants, selectedPayer, currentPendingPayer }: NameFormProps) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -129,19 +130,21 @@ export function NameForm({ participants, onAddParticipant, onRemoveParticipant, 
           <div className="space-y-1">
             {participants.map((participant) => {
               const isSelectedToPay = selectedPayer?.id === participant.id;
+              const isPendingPayer = currentPendingPayer?.id === participant.id;
+              const isHighlighted = isSelectedToPay || isPendingPayer;
               
               return (
                 <div
                   key={participant.id}
                   className="flex items-center justify-between px-2 py-1 rounded-lg transition-all duration-200 border-4 shadow-xl"
                   style={{
-                    backgroundColor: isSelectedToPay 
-                      ? `${participant.color}80` // 50% opacity for selected payer
+                    backgroundColor: isHighlighted 
+                      ? `${participant.color}80` // 50% opacity for highlighted payer
                       : `${participant.color}40`, // 25% opacity for normal
-                    borderColor: isSelectedToPay 
+                    borderColor: isHighlighted 
                       ? VISUAL_THEME.WHITE_BORDER // white
                       : `${participant.color}40`, // same transparency as background when not selected
-                    boxShadow: isSelectedToPay 
+                    boxShadow: isHighlighted 
                       ? '0 25px 50px -12px rgba(255, 255, 255, 0.3)' // white shadow
                       : 'none'
                   }}
@@ -151,15 +154,15 @@ export function NameForm({ participants, onAddParticipant, onRemoveParticipant, 
                       {participant.emoji}
                     </span>
                     <span className={`font-medium transition-colors text-sm ${
-                      isSelectedToPay ? 'text-amber-50' : 'text-amber-100'
+                      isHighlighted ? 'text-amber-50' : 'text-amber-100'
                     }`}>
                       {participant.name}
                     </span>
                   </div>
                 
                   <div className="flex items-center space-x-2">
-                    {/* Finger pointer for selected payer */}
-                    {isSelectedToPay && (
+                    {/* Finger pointer for highlighted payer */}
+                    {isHighlighted && (
                       <span className="text-2xl animate-pulse">
                         👈
                       </span>

@@ -158,10 +158,6 @@ export const INPUT_CONSTRAINTS = {
 
 // Visual Theme Constants - Phase 3: Styling and Color Constants
 export const VISUAL_THEME = {
-  // Selected payer highlighting colors
-  SELECTED_PAYER_COLOR: '#F7DC6F',          // Light gold for selected payer
-  SELECTED_PAYER_SHADOW: 'rgba(247, 220, 111, 0.8)', // Gold shadow for selected payer
-  
   // UI state colors
   ERROR_COLOR: '#EF4444',                   // Red for error states
   SUCCESS_COLOR: '#10B981',                 // Green for success states
@@ -175,7 +171,6 @@ export const VISUAL_THEME = {
   // Border and shadow colors
   WHITE_BORDER: '#FFFFFF',                  // White border for highlighting
   DROP_SHADOW: 'rgba(0, 0, 0, 0.4)',        // Standard drop shadow
-  GOLD_GLOW: 'rgba(255, 215, 0, 0.6)',      // Gold glow effect
 } as const;
 
 // Component Dimensions - Phase 3: Size and Layout Constants  

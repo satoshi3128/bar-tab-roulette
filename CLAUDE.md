@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**"You Pay Game"** - A roulette-style web application to decide who pays the bill. Users input participant names, and a swipe-to-spin roulette wheel randomly selects the "winner" who pays.
+**"You Pay Game"** - A roulette-style web application to decide who pays the bill. Users input participant names, and a swipe-to-spin roulette wheel randomly selects the **確定者（confirmed person）** who handles payment.
+
+### Important Design Philosophy
+- **中立的表現**: The selected person is called "確定者" (confirmed person), not "winner" or "loser"
+- **ユーザー解釈**: Whether this is considered winning or losing depends entirely on how users choose to use the game
+- **Game Flexibility**: Can be used for both positive outcomes (who gets a prize) or responsibilities (who pays the bill)
 
 ## Technology Stack
 
@@ -39,7 +44,7 @@ npm run lint         # Run ESLint
 - `app/page.tsx` - Main page with state management for participants and winner
 - `components/Roulette.tsx` - Core roulette wheel with spinning logic
 - `components/NameForm.tsx` - Form for adding/removing participants
-- `components/ResultModal.tsx` - Modal displaying the selected winner
+- `components/ResultModal.tsx` - Modal displaying the selected 確定者 (confirmed person)
 
 ### Key Technical Concepts
 
@@ -50,7 +55,7 @@ npm run lint         # Run ESLint
 - Realistic deceleration animation with random rotation amounts
 - Velocity-based power calculation for natural feel
 
-**Winner Calculation**: Mathematical angle calculation determines winner based on:
+**確定者 Selection**: Mathematical angle calculation determines the confirmed person based on:
 - Final rotation angle modulo 360
 - Participant weight distribution across the wheel
 - Pointer position (accounts for upward-pointing arrow)

@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Participant } from '@/types';
 import { UI_MESSAGES, LAYOUT } from '@/constants/roulette';
+import { floatingVariants } from '@/constants/animation';
 
 interface ResultModalProps {
   winner: Participant | null;
@@ -32,7 +33,7 @@ export function ResultModal({ winner, onClose }: ResultModalProps) {
             stiffness: 300,
             duration: 0.6 
           }}
-          className="p-8 rounded-2xl text-center max-w-md w-full mx-4 border-4 border-yellow-400 shadow-xl shadow-yellow-400/20"
+          className="p-8 rounded-2xl text-center max-w-md w-full mx-4"
           style={{ backgroundColor: `${winner.color}80` }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -97,13 +98,18 @@ export function ResultModal({ winner, onClose }: ResultModalProps) {
             className="mb-8"
           >
             <div 
-              className="inline-block px-8 py-6 rounded-2xl border-4 border-yellow-400 shadow-lg"
+              className="inline-block px-8 py-6 rounded-2xl"
               style={{ backgroundColor: winner.color + '80' }}
             >
               <div className="text-6xl mb-3">{winner.emoji}</div>
-              <div className="text-3xl md:text-4xl font-bold text-amber-100">
+              <motion.div 
+                className="text-3xl md:text-4xl font-bold text-amber-100"
+                variants={floatingVariants}
+                animate="confirmed"
+                initial="static"
+              >
                 {winner.name}
-              </div>
+              </motion.div>
               <div className="text-lg text-amber-200 mt-2">
                 {UI_MESSAGES.MODAL_MESSAGE}
               </div>

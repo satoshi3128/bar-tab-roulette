@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useAnimate } from 'framer-motion';
+import { useAnimate, motion } from 'framer-motion';
 import { Participant } from '@/types';
+import { floatingVariants } from '@/constants/animation';
 import {
   BOTTLE_OPENER_PHYSICS,
   BOTTLE_OPENER_POSITIONING,
@@ -26,17 +27,22 @@ interface RouletteProps {
   onPayerSelected: (payer: Participant) => void;
   onCurrentPayerChange?: (payer: Participant | null) => void;
   onHintTextChange?: (hintText: string | null) => void;
+  onGameStart?: () => void; // 新しいゲーム開始時のクリーンアップ
+  currentPendingPayer?: Participant | null; // 外部から注入される仮確定者
+  selectedPayer?: Participant | null; // 外部から注入される確定者
 }
 
 export function Roulette({ 
   participants, 
   onPayerSelected, 
   onCurrentPayerChange, 
-  onHintTextChange
+  onHintTextChange,
+  onGameStart,
+  currentPendingPayer,
+  selectedPayer: selectedPayerProp
 }: RouletteProps) {
   const [, animate] = useAnimate();
   const [isSpinning, setIsSpinning] = useState(false);
-  const [selectedPayer, setSelectedPayer] = useState<Participant | null>(null);
   const [calculationState, setCalculationState] = useState<'idle' | 'drum-roll' | 'calculating' | 'result' | 'error'>('idle');
   const hintIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const bottleOpenerRef = useRef<HTMLImageElement>(null);
@@ -51,10 +57,8 @@ export function Roulette({
     const startAngle = index * segmentSize;
     const endAngle = (index + 1) * segmentSize;
     
-    // Use gold color for selected payer, original color for others
-    const color = (selectedPayer?.id === participant.id) 
-      ? VISUAL_THEME.SELECTED_PAYER_COLOR // Light gold for selected payer
-      : participant.color;
+    // Always use original participant color (no gold background effect)
+    const color = participant.color;
       
     return `${color} ${startAngle}deg ${endAngle}deg`;
   });
@@ -79,6 +83,11 @@ export function Roulette({
   // Handle SPIN button click (3-30 second random duration)
   const handleSpinButton = async () => {
     if (isSpinning || participants.length < 2) return;
+    
+    // Clear previous game state
+    onGameStart?.();
+    onCurrentPayerChange?.(null);
+    
     setIsSpinning(true);
 
     // Generate random duration using constants
@@ -124,12 +133,13 @@ export function Roulette({
       cancelAnimationFrame(localAnimationFrameRef);
     }
     
+    // Clear pending payer immediately when spinning stops
+    onCurrentPayerChange?.(null);
     setIsSpinning(false);
     
     // Perform dramatic calculation with parallel execution
     try {
       const payer = await performDramaticCalculation();
-      setSelectedPayer(payer);
       onPayerSelected(payer);
       
       // Reset calculation state after a delay
@@ -289,8 +299,7 @@ export function Roulette({
     // During spinning: use lightweight calculation for real-time updates
     const newPayer = calculateLightweightPayer();
     
-    if (newPayer && newPayer.id !== selectedPayer?.id) {
-      setSelectedPayer(newPayer);
+    if (newPayer && newPayer.id !== currentPendingPayer?.id) {
       onCurrentPayerChange?.(newPayer);
       
       // Debug logging (remove in production)
@@ -298,7 +307,7 @@ export function Roulette({
         console.log(`Current payer updated (lightweight):`, newPayer.name);
       }
     }
-  }, [isSpinning, calculationState, selectedPayer, calculateLightweightPayer, onCurrentPayerChange]);
+  }, [isSpinning, calculationState, calculateLightweightPayer, onCurrentPayerChange, currentPendingPayer?.id]);
 
   // Dramatic presentation with drum roll effect
   const dramaticPresentation = useCallback(async (duration: number): Promise<void> => {
@@ -424,25 +433,30 @@ export function Roulette({
         {/* Participant Names */}
         {participants.map((participant, index) => {
           const position = getParticipantPosition(index);
-          const isSelectedToPay = selectedPayer?.id === participant.id;
+          const isPendingPayer = currentPendingPayer?.id === participant.id;
+          const isConfirmedPayer = selectedPayerProp?.id === participant.id;
+          const isSpinningAndPending = isSpinning && isPendingPayer;
+          const isConfirmedAndNotSpinning = !isSpinning && isConfirmedPayer;
           
           return (
-            <div
+            <motion.div
               key={participant.id}
               className="absolute text-white font-bold text-sm md:text-base flex items-center justify-center"
               style={{
                 left: `calc(50% + ${position.x}px)`,
                 top: `calc(50% + ${position.y}px)`,
-                transform: 'translate(-50%, -50%)',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-                filter: isSelectedToPay 
-                  ? `drop-shadow(2px 2px 8px ${VISUAL_THEME.SELECTED_PAYER_SHADOW})` // Gold glow for selected payer
-                  : 'drop-shadow(1px 1px 2px rgba(0,0,0,0.9))',
               }}
+              variants={floatingVariants}
+              animate={
+                isSpinningAndPending ? 'spinning' 
+                : isConfirmedAndNotSpinning ? 'confirmed' 
+                : 'static'
+              }
+              initial="static"
             >
               <span className="mr-1">{participant.emoji}</span>
               <span>{participant.name}</span>
-            </div>
+            </motion.div>
           );
         })}
       </div>

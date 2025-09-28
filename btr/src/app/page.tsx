@@ -10,6 +10,7 @@ import { ResultModal } from '@/components/ResultModal';
 export default function Home() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [selectedPayer, setSelectedPayer] = useState<Participant | null>(null);
+  const [currentPendingPayer, setCurrentPendingPayer] = useState<Participant | null>(null);
   const [modalPayer, setModalPayer] = useState<Participant | null>(null);
   const [hintText, setHintText] = useState<string | null>(null);
 
@@ -26,6 +27,7 @@ export default function Home() {
   };
 
   const handlePayerSelected = (payer: Participant) => {
+    setSelectedPayer(payer);
     setModalPayer(payer);
   };
 
@@ -34,11 +36,17 @@ export default function Home() {
   };
 
   const handleCurrentPayerChange = (payer: Participant | null) => {
-    setSelectedPayer(payer);
+    setCurrentPendingPayer(payer);
   };
 
   const handleHintTextChange = (text: string | null) => {
     setHintText(text);
+  };
+
+  const handleGameStart = () => {
+    // Clear previous game results when starting new game
+    setSelectedPayer(null);
+    setCurrentPendingPayer(null);
   };
 
 
@@ -82,6 +90,9 @@ export default function Home() {
               onPayerSelected={handlePayerSelected}
               onCurrentPayerChange={handleCurrentPayerChange}
               onHintTextChange={handleHintTextChange}
+              onGameStart={handleGameStart}
+              currentPendingPayer={currentPendingPayer}
+              selectedPayer={selectedPayer}
             />
           </div>
 
@@ -93,6 +104,7 @@ export default function Home() {
               onRemoveParticipant={handleRemoveParticipant}
               onResetAllParticipants={handleResetAllParticipants}
               selectedPayer={selectedPayer}
+              currentPendingPayer={currentPendingPayer}
             />
           </div>
         </div>
