@@ -2,17 +2,22 @@
   "name": "btr",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.12.4",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "clean": "rm -rf .next node_modules/.cache",
+    "reinstall": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
+    "check": "pnpm run lint && pnpm run build"
   },
   "dependencies": {
     "framer-motion": "^12.23.18",
     "next": "15.5.3",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "styled-jsx": "^5.1.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
