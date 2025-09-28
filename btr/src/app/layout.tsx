@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "You Pay Game - ルーレットで支払い者決定",
-  description: "参加者を入力してルーレットを回すだけ！誰が支払うかを公平に決める楽しいゲームです。",
+  title: "Bar Tab Roulette (BTR) - ルーレットで支払い者決定",
+  description: "バーやレストランでの支払い担当を決めるルーレットゲーム。栓抜きを回転させて運命の人を決定！",
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
