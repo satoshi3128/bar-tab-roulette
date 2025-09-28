@@ -477,7 +477,7 @@ export function Roulette({
             }}
           >
             <img 
-              src="/bottle_opener.png"
+              src="./bottle_opener.png"
               alt="Bottle Opener Pointer"
               className="bottle-opener-image"
               style={{
@@ -495,7 +495,7 @@ export function Roulette({
         >
           <img 
             ref={bottleOpenerRef}
-            src="/bottle_opener.png"
+            src="./bottle_opener.png"
             alt="Bottle Opener Pointer"
             className="object-contain"
             style={{
