@@ -1,17 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bar Tab Roulette (BTR)
 
-## Getting Started
+バーやレストランでの支払い担当を決めるルーレットゲーム。栓抜きを回転させて運命の人を決定！
 
-First, run the development server:
+## 技術スタック
+
+- **Framework**: Next.js 15.5.3 with App Router & Turbopack
+- **Package Manager**: pnpm 10.12.4 (推奨)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4
+- **Animation**: Framer Motion
+- **Design**: モバイルファーストレスポンシブ設計
+
+## 開発環境セットアップ
+
+### 必要条件
+- Node.js 18+ 
+- pnpm 8+ (推奨)
+
+### インストール
 
 ```bash
+# 依存関係のインストール（推奨）
+pnpm install
+
+# または npm の場合
+npm install
+```
+
+### 開発サーバー起動
+
+```bash
+# pnpm（推奨）
+pnpm run dev
+
+# その他のパッケージマネージャー
 npm run dev
-# or
 yarn dev
-# or
-pnpm dev
-# or
 bun dev
+```
+
+## 利用可能なスクリプト
+
+```bash
+pnpm run dev      # 開発サーバー起動（Turbopack有効）
+pnpm run build    # プロダクションビルド
+pnpm run start    # プロダクションサーバー起動
+pnpm run lint     # ESLint実行
+pnpm run clean    # キャッシュクリア
+pnpm run check    # lint + build の組み合わせ
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
